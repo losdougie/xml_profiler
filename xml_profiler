@@ -1,0 +1,44 @@
+import sys
+import os
+import xml.etree.ElementTree as ET
+
+def xml_profile(file):
+    xml = ET.parse(file)
+    root = xml.getroot()
+    return "\n".join(sorted(get_children([], root, "\\")))
+
+def get_children(paths, parent, parent_path):
+    # list only terminating node paths
+    current_path = "\\".join([parent_path, parent.tag])
+    child_nodes = []
+    for child in parent:
+        child_path = "\\".join([current_path, child.tag])
+        if child_path not in paths:
+            if len(child) == 0: # only add if does not have children
+                paths.append(child_path)
+        # check if nodes repeat under parent and adds separately if children are not unique
+        if child_path in child_nodes:
+            has_many = "[One to Many: " + child_path + "]"
+            if has_many not in paths:
+                paths.append(has_many)
+        else:
+            child_nodes.append(child_path)
+        paths = get_children(paths, child, current_path)
+    return paths
+
+def main(args):
+    if not args:
+        print("""
+        No file specified. Run the command with a file.
+        e.g. python xml_profiler.py file.xml
+        """)
+        return
+    for file in args:
+        if os.path.isfile(file):
+            print(f"FILE: {file}\nXML PROFILE:")
+            print(xml_profile(file))
+        else:
+            print(f"File \"{file}\" does not exist.")
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
